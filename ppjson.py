@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
-import sys
-
-if len(sys.argv) != 2:
-    print("Argument must be JSON file to pretty print.")
-    exit(-1)
-
+import argparse
 import json
-with open(sys.argv[1], 'r') as f:
+
+parser = argparse.ArgumentParser(description="Pretty Print JSON")
+parser.add_argument('file', type=str, help="JSON file to pretty print.")
+parser.add_argument('--indent', type=int, default=2, help='Number of spaces in pretty print.')
+args = parser.parse_args()
+
+
+with open(args.file, 'r') as f:
     j = json.load(f)
-    print(json.dumps(j, indent=2))
+    print(json.dumps(j, indent=args.indent))
