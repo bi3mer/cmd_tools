@@ -20,9 +20,12 @@ with open(join(args.dir, "config_map_elites_generate_corpus_data.csv")) as f:
 
         with open(level_name) as f_level:
             data[int(f_a), int(f_b), int(index)] = {
-                "R": perf,
-                "lvl": f_level.readlines()
+                "R_d": int(perf),
+                "lvl": [int(e) for e in f_level.readline().split(',')]
             }
+
+def tuple_to_str(tup):
+    return f'{tup[0]},{tup[1]},{tup[2]}'
 
 nodes_with_neighbors = 0
 DIR = [(-1,0), (1,0), (0,-1), (0,1)]
@@ -38,7 +41,7 @@ for key in data.keys():
             new_key = (new_x, new_y, index)
 
             if new_key in data:
-                neighbors.append(str(new_key))
+                neighbors.append(tuple_to_str(new_key))
                 index += 1
             else:
                 break
@@ -47,8 +50,9 @@ for key in data.keys():
     if len(neighbors) > 0:
         nodes_with_neighbors += 1
 
-        graph[str(key)] = data[key]
-        graph[str(key)]['neighbors'] = neighbors
+        new_key = tuple_to_str(key)
+        graph[new_key] = data[key]
+        graph[new_key]['neighbors'] = neighbors
 
 print(f'Nodes: {nodes_with_neighbors} / {len(data)}')
 
