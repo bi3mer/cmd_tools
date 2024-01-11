@@ -2,20 +2,21 @@
 
 from os.path import join
 from json import dump
-import sys
+import argparse
 
-if len(sys.argv) != 2:
-    print("Include path to gram elites level directory in the command line argument")
-    sys.exit(-1)
+parser = argparse.ArgumentParser(description="Convert Gram-Elites output to a MDP graph")
+parser.add_argument('--dir', type=str, default=".", help="Base directory for Gram-Elites algorithm type.")
+parser.add_argument('--out', type=str, default="mdp", help="Name of the output json file. Do not include '.json'.")
+args = parser.parse_args()
 
 data = {}
-with open(join(sys.argv[1], "config_map_elites_generate_corpus_data.csv")) as f:
+with open(join(args.dir, "config_map_elites_generate_corpus_data.csv")) as f:
     f.readline() # skip first line
 
     for line in f.readlines():
         f_a, f_b, index, perf = line.strip().split(',')
         key = f'{f_b}_{f_a}_{index}'
-        level_name = join(sys.argv[1], 'levels', f'{key}.txt')
+        level_name = join(args.dir, 'levels', f'{key}.txt')
 
         with open(level_name) as f_level:
             data[int(f_a), int(f_b), int(index)] = {
@@ -51,7 +52,7 @@ for key in data.keys():
 
 print(f'Nodes: {nodes_with_neighbors} / {len(data)}')
 
-with open(join(sys.argv[1], 'mdp.json'), 'w') as f:
+with open(f'{args.out}.json', 'w') as f:
     dump(graph, f)
 
-print("Result file: ./mdp.json")
+print(f"Result file: ./{args.out}.json")
