@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from os.path import join
 from json import dump
 import sys
@@ -49,7 +51,7 @@ for key in data.keys():
 
 print(f'Nodes: {nodes_with_neighbors} / {len(data)}')
 
-with open('mdp.json', 'w') as f:
+with open(join(sys.argv[1], 'mdp.json'), 'w') as f:
     dump(graph, f)
 
 print("Result file: ./mdp.json")
