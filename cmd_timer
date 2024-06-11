@@ -26,10 +26,10 @@ def main():
         sys.stdout.flush()
         time.sleep(1)
 
-    sys.stdout.write("\rComplete!            \n")
-
-    for i in range(10):
-        print("\a")  # beep sound
+    for _ in range(10):
+        sys.stdout.write("\a")  # beep sound
+        sys.stdout.write("\r")
+        sys.stdout.flush()
         time.sleep(0.1)
 
 
