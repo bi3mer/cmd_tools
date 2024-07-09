@@ -1,0 +1,3 @@
+[submodule "ttd"]
+	path = ttd
+	url = https://github.com/bi3mer/ttd.git
