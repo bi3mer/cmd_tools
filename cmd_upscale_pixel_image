@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+
+from PIL import Image
+import sys
+
+if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        print('Expected three arguments:')
+        print('  cmd_upscale_pixel_image [image_path] [new_path] [scale-factor]')
+        sys.exit(1)
+ 
+
+    scale = int(sys.argv[3])
+    with Image.open(sys.argv[1]) as original_img:
+        original_img = original_img.convert('RGBA')
+
+        w, h = original_img.size
+
+        new_img = Image.new('RGBA', (w * scale, h * scale), color=(0,0,0,0))
+
+        for y in range(h):
+            for x in range(w):
+                pixel = original_img.getpixel((x, y))
+
+                for y_mod in range(scale):
+                    for x_mod in range(scale):
+                        new_img.putpixel((x*scale + x_mod, y*scale + y_mod), pixel)
+
+        new_img.save(sys.argv[2])
