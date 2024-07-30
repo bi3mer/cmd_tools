@@ -1,0 +1,28 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+
+def main():
+    file_path = sys.argv[1]
+    if not os.path.exists(file_path):
+        print(f'File not found: {file_path}')
+        return 1
+    
+    data = []
+    with open(file_path, 'r') as f:
+        print('Will delete the following files, please note the paths before affirming yes with Y:\n')
+        for l in f.readlines():
+            data.append(l.strip())
+            print(data[-1])
+
+        if input() != 'Y':
+            print('rm cancelled')
+            return 1
+
+        for path in data:
+            print(f'Deleting: {path}')
+            os.remove(path)
+
+if __name__ == "__main__":
+    main()
