@@ -1,0 +1,48 @@
+#!/Users/colan/projects/cmd_tools/.venv/bin/python
+"""Invert the colors of a PDF and save as a new file."""
+
+import sys
+import argparse
+from pathlib import Path
+
+
+def invert_pdf(src: Path, dst: Path) -> None:
+    try:
+        import fitz  # PyMuPDF
+    except ImportError:
+        sys.exit("Error: PyMuPDF is required.  Run: pip install pymupdf")
+
+    doc = fitz.open(src)
+    out = fitz.open()
+
+    for page_num, page in enumerate(doc, start=1):
+        mat = fitz.Matrix(2, 2)  # 2x scale → 144 dpi
+        pix = page.get_pixmap(matrix=mat, colorspace=fitz.csRGB, alpha=False)
+        pix.invert_irect(pix.irect)
+        img_page = out.new_page(width=pix.width, height=pix.height)
+        img_page.insert_image(img_page.rect, pixmap=pix)
+        print(f"  processed page {page_num}/{len(doc)}", end="\r")
+
+    out.save(dst, deflate=True)
+    doc.close()
+    out.close()
+
+    print(f"\nSaved → {dst}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Invert the colors of a PDF.")
+    parser.add_argument("pdf", type=Path, help="Path to the input PDF.")
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("-o", "--overwrite", action="store_true", help="Overwrite the original PDF.")
+    mode.add_argument("-n", "--new", action="store_true", help="Save as a new file with _inverted suffix.")
+    args = parser.parse_args()
+
+    src = args.pdf
+    if not src.exists():
+        sys.exit(f"Error: file not found: {src}")
+    if src.suffix.lower() != ".pdf":
+        sys.exit(f"Error: expected a .pdf file, got: {src.suffix}")
+
+    dst = src if args.overwrite else src.with_stem(src.stem + "_inverted")
+    invert_pdf(src, dst)
