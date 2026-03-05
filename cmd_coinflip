@@ -12,7 +12,6 @@ if args.numflips < 1:
     parser.error("numflips must be at least 1.")
 
 # --- Animation ---
-
 COIN_FRAMES = [
     [
         "  ╭─────╮  ",
