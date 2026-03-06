@@ -1,19 +1,41 @@
 #!/Users/colan/projects/cmd_tools/.venv/bin/python
-"""Invert the colors of a PDF and save as a new file."""
+"""Invert the colors of a PDF and optionally append blank pages."""
 
 import sys
 import argparse
 from pathlib import Path
 
 
-def invert_pdf(src: Path, dst: Path) -> None:
+def get_bg_color(page) -> tuple:
+    """Sample the background color from the four corners of the page."""
+    import fitz
+    mat = fitz.Matrix(1, 1)
+    pix = page.get_pixmap(matrix=mat, colorspace=fitz.csRGB, alpha=False)
+
+    w, h = pix.width, pix.height
+    corners = [
+        pix.pixel(0, 0),
+        pix.pixel(w - 1, 0),
+        pix.pixel(0, h - 1),
+        pix.pixel(w - 1, h - 1),
+    ]
+    r = sum(c[0] for c in corners) / 4 / 255
+    g = sum(c[1] for c in corners) / 4 / 255
+    b = sum(c[2] for c in corners) / 4 / 255
+    return (r, g, b)
+
+
+def invert_pdf(src: Path, dst: Path, extra_pages: int) -> None:
     try:
-        import fitz  # PyMuPDF
+        import fitz
     except ImportError:
         sys.exit("Error: PyMuPDF is required.  Run: pip install pymupdf")
 
     doc = fitz.open(src)
     out = fitz.open()
+
+    r, g, b = get_bg_color(doc[0])
+    bg_color = (1 - r, 1 - g, 1 - b)
 
     for page_num, page in enumerate(doc, start=1):
         mat = fitz.Matrix(2, 2)  # 2x scale → 144 dpi
@@ -22,6 +44,15 @@ def invert_pdf(src: Path, dst: Path) -> None:
         img_page = out.new_page(width=pix.width, height=pix.height)
         img_page.insert_image(img_page.rect, pixmap=pix)
         print(f"  processed page {page_num}/{len(doc)}", end="\r")
+
+    if extra_pages:
+        # Use the dimensions of the last page as the template
+        last = doc[-1]
+        w, h = last.rect.width, last.rect.height
+        for _ in range(extra_pages):
+            blank = out.new_page(width=w * 2, height=h * 2)  # match 2x scale
+            blank.draw_rect(blank.rect, color=None, fill=bg_color)
+        print(f"\n  appended {extra_pages} blank page(s) (bg: {tuple(round(c, 3) for c in bg_color)})")
 
     out.save(dst, deflate=True)
     doc.close()
@@ -36,6 +67,7 @@ if __name__ == "__main__":
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("-o", "--overwrite", action="store_true", help="Overwrite the original PDF.")
     mode.add_argument("-n", "--new", action="store_true", help="Save as a new file with _inverted suffix.")
+    parser.add_argument("--pages", type=int, default=0, metavar="N", help="Number of blank pages to append.")
     args = parser.parse_args()
 
     src = args.pdf
@@ -43,6 +75,8 @@ if __name__ == "__main__":
         sys.exit(f"Error: file not found: {src}")
     if src.suffix.lower() != ".pdf":
         sys.exit(f"Error: expected a .pdf file, got: {src.suffix}")
+    if args.pages < 0:
+        sys.exit("Error: --pages must be a non-negative integer.")
 
     dst = src if args.overwrite else src.with_stem(src.stem + "_inverted")
-    invert_pdf(src, dst)
+    invert_pdf(src, dst, args.pages)
